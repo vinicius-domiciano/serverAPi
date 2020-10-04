@@ -14,7 +14,20 @@ module.exports = {
                 for(let i = 0; i < place.length; i++) {
                     let placeDetails = await Places.findPlaceDetails(key, URL, place[i].place_id);
 
+                    for(let y = 0; y < place[i].photos.length; y ++){
+                        let photo_url = `${URL}/photo?photoreference=${place[i].photos[y].photo_reference}&key=${key}&maxwidth=250`;
+                        place[i].photos[y] = {
+                            photo_url,
+                            ...place[i].photos[y]
+                        }
+                    }
+
                     placeDetails.photos.forEach(element => {
+                        let photo_url = `${URL}/photo?photoreference=${element.photo_reference}&key=${key}&maxwidth=250`;
+                        element = {
+                            photo_url,
+                            ...element
+                        };
                         place[i].photos.push(element);
                     });
 
