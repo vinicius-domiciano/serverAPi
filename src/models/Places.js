@@ -4,7 +4,7 @@ class Places {
 
     static findPlace(key, URL, textQuery) {
 
-        const fields = ['name','photos','place_id','formatted_address','types'];
+        const fields = ['name','place_id','formatted_address','types'];
 
         return new Promise((resolve, reject) => {
             request(`${URL}/findplacefromtext/json?input=${textQuery}&inputtype=textquery&fields=${fields}&key=${key}`, 

@@ -8,47 +8,56 @@ module.exports = {
     async searchPlace(req, res) {
 
         const text = req.query.text;
+
+        //formata os textos retirando os caracteres com acentuação
+        //EX: São Paulo ===> Sao Paulo
         let formattdText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
         if (req.query.text) {
             try {
                 let place = await Places.findPlace(key, URL, formattdText);
+ 
+                if( place.lenth !== 0 ) {
+                    const cont = place.length;
 
-                console.log(place)
-                for(let i = 0; i < place.length; i++) {
-                    let placeDetails = await Places.findPlaceDetails(key, URL, place[i].place_id);
+                    for (let index = 0; index < cont; index++) {
+                        let placeElement = place[index];
 
-                    if (place[i].photos) {
-                        for(let y = 0; y < place[i].photos.length; y ++){
-                            let photo_url = `${URL}/photo?photoreference=${place[i].photos[y].photo_reference}&key=${key}&maxwidth=250`;
-                            place[i].photos[y] = {
-                                photo_url,
-                                ...place[i].photos[y]
-                            }
+                        let placeDetails = await Places.findPlaceDetails(key, URL, placeElement.place_id);
+
+                        // adicionando campo de fotos a place
+                        placeElement.photos = [];
+    
+                        //verificar se os detalhes tem fotos
+                        if (placeDetails.photos) {
+                            // se tiver cria um novo campo com acesso a url da foto
+                            placeDetails.photos.forEach(element => {
+                                let photo_url = `${URL}/photo?photoreference=${element.photo_reference}&key=${key}&maxwidth=1920`;
+                                element = {
+                                    photo_url,
+                                    ...element
+                                };
+                                placeElement.photos.push(element);
+                            });
                         }
+    
+                        //adiciona os novos dados para place
+                        place[index] = {
+                            formatted_phone_number: placeDetails.formatted_phone_number, 
+                            address_components: placeDetails.address_components,
+                            ...placeElement,
+                        };
                     }
 
-                    if (placeDetails.photos) {
-                        placeDetails.photos.forEach(element => {
-                            let photo_url = `${URL}/photo?photoreference=${element.photo_reference}&key=${key}&maxwidth=250`;
-                            element = {
-                                photo_url,
-                                ...element
-                            };
-                            place[i].photos.push(element);
-                        });
-                    }
+                    // Se pace estiver dador retrona ele 
+                    return res.status(200).json(place);
 
-                    place[i] = {
-                        formatted_phone_number: placeDetails.formatted_phone_number, 
-                        address_components: placeDetails.address_components,
-                        ...place[i],
-                    }
                 }
+
+                // se não tiver dados retorna erro no paramentros
+                return res.status(400).json({erro: 'Parametros mal formatados'});
                 
-                return res.status(200).json(place);
             } catch (error) {
-                console.log(error)
                 if (error.statusCode == 400) {
                     return res.status(400).json(error.err);
                 } else {
@@ -56,9 +65,8 @@ module.exports = {
                 }
             }
             
-        }
+        }        
 
-        return res.status(400).json({erro: 'Parametros mal formatados'});
     }
 
 }
